@@ -1,0 +1,15 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "C_Cpp.default.includePath": [
+        "native/src/main/public",
+        "native_app/src/main/headers",
+        "${env:JAVA_HOME}/include",
+        "${env:JAVA_HOME}/include/linux"
+    ],
+    "files.associations": {
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "cstdarg": "cpp"
+    }
+}
