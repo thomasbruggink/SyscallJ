@@ -10,8 +10,8 @@ class Bridge {
     static native long munmap(long addr, long len); 
     static native long ioctl(long fd, long command, Object argument);
     static native long io_uring_setup(int entries, Object params);
-    static native long io_uring_enter(long fd, int to_submit, int min_complete, int flags, int sig);
-    static native long io_uring_register(long fd, int opcode, long arg, int nr_args);
+    static native long io_uring_enter(long fd, int to_submit, int min_complete, int flags, int[] sig);
+    static native long io_uring_register(long fd, int opcode, byte[] arg, int nr_args);
 
     static {
         System.loadLibrary("native");

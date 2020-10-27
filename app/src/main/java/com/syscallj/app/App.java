@@ -2,11 +2,39 @@ package com.syscallj.app;
 
 import com.google.common.base.Charsets;
 import com.syscallj.*;
+import com.syscallj.models.IoUringParams;
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
 
 import static java.lang.System.out;
 
 public class App {
     static String workDir = System.getProperty("user.dir");
+
+    static void memset(long addr, long size, int val) {
+        var unsafe = getUnsafe();
+        unsafe.setMemory(addr, size, (byte)val);
+    }
+
+    static long malloc(long size) {
+        return Syscall.mmap(0, size, MemoryProtection.READ.getValue() | MemoryProtection.WRITE.getValue(), MemoryFlags.SHARED.getValue() | MemoryFlags.ANONYMOUS.getValue(), -1, 0);
+    }
+
+    static void free(long addr, long size) {
+        Syscall.munmap(addr, size);
+    }
+
+    static Unsafe getUnsafe() {
+        try {
+            Field f = Unsafe.class.getDeclaredField("theUnsafe");
+            f.setAccessible(true);
+            return (Unsafe) f.get(null);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e.getMessage());
+        }
+    }
 
     static void read() {
         var fd = Syscall.open("/proc/version", FileFlags.NONE, FileModes.READ, FilePermissions.NONE);
@@ -145,7 +173,33 @@ public class App {
         }
     }
 
-    public static void main(String[] args) throws IllegalAccessException {
+    static void unsafeMemory() {
+        var unsafe = getUnsafe();
+        var size = 1024;
+        var addr = Syscall.mmap(0, size, MemoryProtection.READ.getValue() | MemoryProtection.WRITE.getValue(), MemoryFlags.SHARED.getValue() | MemoryFlags.ANONYMOUS.getValue(), -1, 0);
+        unsafe.setMemory(addr, 20L, (byte)1);
+
+        out.printf("Byte: %d\n", unsafe.getByte(addr));
+        Syscall.munmap(addr, size);
+    }
+
+    static void readIOUring() {
+        int size = 1024;
+        int qd = 64;
+        var addr = malloc(size);
+        memset(addr, size, 0);
+        var ioUringParams = new IoUringParams();
+        ioUringParams.flags = 0;
+        var fd = Syscall.io_uring_setup(qd, ioUringParams);
+        if(fd < 0) {
+            out.printf("Unable to initialize IO_URING_SETUP: %d\n", fd);
+            return;
+        }
+        out.printf("IO_URING_SETUP: %d\n", fd);
+        free(addr, size);
+    }
+
+    public static void main(String[] args) {
         System.setProperty("java.library.path", System.getProperty("java.library.path") + ":" + workDir + "/native/build/lib/main/debug");
         out.println(System.getProperty("java.library.path"));
 
@@ -156,5 +210,7 @@ public class App {
 //        readKvmOptions();
 //        memoryMapping();
 //        memoryMappingNoFd();
+//        unsafeMemory();
+        readIOUring();
     }
 }

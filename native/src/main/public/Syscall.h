@@ -47,22 +47,22 @@ namespace syscallj
         /**
          * Syscall 9, memory map
          * params:
-         * addr: start address hint (null to let the kernel decide)
+         * addr: start address hint (0 to let the kernel decide)
          * len: amount of bytes to reserve
-         * prot: 
-         * flags: 
-         * fd: 
-         * off: 
+         * prot: protection settings for memory to allocate
+         * flags: flags to pass, is this private or shared memory
+         * fd: file descriptor to initialize the data from, use -1 with flag SHARED | ANONYMOUS to skip reading from a file
+         * off: offset in the file to start at
          * returns:
-         * long: 
+         * long: a pointer to the address allocated or an error
          */
         static long mmap(unsigned long addr, unsigned long len, unsigned long prot, unsigned long long flags, unsigned long fd, unsigned long off);
         /**
          * Syscall 10, memory protect
          * params:
-         * addr: 
-         * len: 
-         * prot: 
+         * addr: the address to change
+         * len: the amount of bytes to change
+         * prot: the new protection settings
          * returns:
          * long: mprotect result code
          */
@@ -70,8 +70,8 @@ namespace syscallj
         /**
          * Syscall 11, memory unmap
          * params:
-         * addr: 
-         * len: 
+         * addr: the address to free
+         * len: the amount of bytes to free
          * returns:
          * long: unmap result code
          */

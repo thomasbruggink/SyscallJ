@@ -82,18 +82,18 @@ JNIEXPORT jlong JNICALL Java_com_syscallj_Bridge_io_1uring_1setup
 /*
  * Class:     com_syscallj_Bridge
  * Method:    io_uring_enter
- * Signature: (JIIII)J
+ * Signature: (JIII[I)J
  */
 JNIEXPORT jlong JNICALL Java_com_syscallj_Bridge_io_1uring_1enter
-  (JNIEnv *, jclass, jlong, jint, jint, jint, jint);
+  (JNIEnv *, jclass, jlong, jint, jint, jint, jintArray);
 
 /*
  * Class:     com_syscallj_Bridge
  * Method:    io_uring_register
- * Signature: (JIJI)J
+ * Signature: (JI[BI)J
  */
 JNIEXPORT jlong JNICALL Java_com_syscallj_Bridge_io_1uring_1register
-  (JNIEnv *, jclass, jlong, jint, jlong, jint);
+  (JNIEnv *, jclass, jlong, jint, jbyteArray, jint);
 
 #ifdef __cplusplus
 }

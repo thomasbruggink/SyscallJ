@@ -1,5 +1,7 @@
 package com.syscallj;
 
+import com.syscallj.models.IoUringParams;
+
 public final class Syscall {
     /**
      * Syscall 0, read a file
@@ -73,14 +75,43 @@ public final class Syscall {
         return Bridge.close(fd);
     }
 
+    /**
+     * Syscall 9, memory map
+     * params:
+     * addr: start address hint (0 to let the kernel decide)
+     * len: amount of bytes to reserve
+     * prot: protection settings for memory to allocate
+     * flags: flags to pass, is this private or shared memory
+     * fd: file descriptor to initialize the data from, use -1 with flag SHARED | ANONYMOUS to skip reading from a file
+     * off: offset in the file to start at
+     * returns:
+     * long: a pointer to the address allocated or an error
+     */
     public static long mmap(long addr, long len, long prot, long flags, long fd, long off) {
         return Bridge.mmap(addr, len, prot, flags, fd, off);
     }
 
+    /**
+     * Syscall 10, memory protect
+     * params:
+     * addr: the address to change
+     * len: the amount of bytes to change
+     * prot: the new protection settings
+     * returns:
+     * long: mprotect result code
+     */
     public static long mprotect(long addr, long len, long prot) {
         return Bridge.mprotect(addr, len, prot);
     }
 
+    /**
+     * Syscall 11, memory unmap
+     * params:
+     * addr: the address to free
+     * len: the amount of bytes to free
+     * returns:
+     * long: unmap result code
+     */
     public static long munmap(long addr, long len) {
         return Bridge.munmap(addr, len);
     }
@@ -96,5 +127,48 @@ public final class Syscall {
      */
     public static long ioctl(long fd, long command, SyscallObject args) {
         return Bridge.ioctl(fd, command, args);
+    }
+
+    /**
+     * Syscall 425, io_uring_setup
+     * entries:
+     * params:
+     * returns:
+     * long: file descriptor on success, <0 on error
+     */
+    public static long io_uring_setup(int entries, IoUringParams params)
+    {
+        return Bridge.io_uring_setup(entries, params);
+    }
+
+    /**
+     * Syscall 426, io_uring_enter
+     * params:
+     * fd: the file descriptor
+     * to_submit:
+     * min_complete:
+     * flags:
+     * sig:
+     * returns:
+     * long:
+     */
+    public static long io_uring_enter(long fd, int to_submit, int min_complete, int flags, int[] sig)
+    {
+        return Bridge.io_uring_enter(fd, to_submit, min_complete, flags, sig);
+    }
+
+    /**
+     * Syscall 427, io_uring_register
+     * params:
+     * fd: the file descriptor
+     * opcode: the opcode to run?
+     * arg: arguments to pass to the command
+     * nr_args: number of arguments
+     * returns:
+     * long: io uring register result code
+     */
+    public static long io_uring_register(long fd, int opcode, byte[] arg, int nr_args)
+    {
+        return Bridge.io_uring_register(fd, opcode, arg, nr_args);
     }
 }

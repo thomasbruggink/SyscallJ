@@ -28,12 +28,29 @@ void toCharArray(JNIEnv *env, jbyteArray from, char *to)
     env->ReleasePrimitiveArrayCritical(from, copyBuffer, 0);
 }
 
+void writeToJava(JNIEnv *env, char *buffer, jobject args, int size)
+{
+    auto writeObject = env->GetMethodID(env->GetObjectClass(args), "writeObject", "([B)V");
+    env->CallVoidMethod(args, writeObject, toJByteArray(env, buffer, size));
+}
+
+char *readFromJava(JNIEnv *env, jobject args, int *size)
+{
+    auto readObject = env->GetMethodID(env->GetObjectClass(args), "readObject", "()[B");
+    auto argData = (jbyteArray)env->CallObjectMethod(args, readObject);
+    *size = env->GetArrayLength(argData);
+    char *buffer = new char[*size];
+    toCharArray(env, argData, buffer);
+    return buffer;
+}
+
 jlong Java_com_syscallj_Bridge_read(JNIEnv *env, jclass c, jlong jFd, jbyteArray jBuffer, jint jSize)
 {
     char buffer[jSize];
     toCharArray(env, jBuffer, buffer);
     auto result = Syscall::read(jFd, buffer, jSize);
-    if(result < 0) {
+    if (result < 0)
+    {
         return result;
     }
     toJByteArray(env, buffer, jBuffer, result);
@@ -55,17 +72,17 @@ jlong Java_com_syscallj_Bridge_open(JNIEnv *env, jclass c, jstring jFileName, ji
     return Syscall::open(content.c_str(), flags, jMode);
 }
 
-jlong Java_com_syscallj_Bridge_mmap(JNIEnv * env, jclass c, jlong addr, jlong len, jlong prot, jlong flags, jlong fd, jlong off)
+jlong Java_com_syscallj_Bridge_mmap(JNIEnv *env, jclass c, jlong addr, jlong len, jlong prot, jlong flags, jlong fd, jlong off)
 {
     return Syscall::mmap(addr, len, prot, flags, fd, off);
 }
 
-jlong Java_com_syscallj_Bridge_mprotect(JNIEnv * env, jclass c, jlong addr, jlong len, jlong prot)
+jlong Java_com_syscallj_Bridge_mprotect(JNIEnv *env, jclass c, jlong addr, jlong len, jlong prot)
 {
     return Syscall::mprotect(addr, len, prot);
 }
 
-jlong Java_com_syscallj_Bridge_munmap(JNIEnv * env, jclass c, jlong addr, jlong len)
+jlong Java_com_syscallj_Bridge_munmap(JNIEnv *env, jclass c, jlong addr, jlong len)
 {
     return Syscall::munmap(addr, len);
 }
@@ -73,33 +90,36 @@ jlong Java_com_syscallj_Bridge_munmap(JNIEnv * env, jclass c, jlong addr, jlong 
 jlong Java_com_syscallj_Bridge_ioctl(JNIEnv *env, jclass c, jlong fd, jlong cmd, jobject args)
 {
     int result;
-    if(args == nullptr) {
+    if (args == nullptr)
+    {
         result = Syscall::ioctl(fd, cmd, 0);
     }
-    else {
-        auto writeObject = env->GetMethodID(env->GetObjectClass(args), "writeObject", "([B)V");
-        auto readObject = env->GetMethodID(env->GetObjectClass(args), "readObject", "()[B");
-        auto argData = (jbyteArray)env->CallObjectMethod(args, readObject);
-        auto size = env->GetArrayLength(argData);
-        char buffer[size];
-        toCharArray(env, argData, buffer);
+    else
+    {
+        int size;
+        auto buffer = readFromJava(env, args, &size);
         result = Syscall::ioctl(fd, cmd, (long int)buffer);
-        env->CallVoidMethod(args, writeObject, toJByteArray(env, buffer, size));
+        writeToJava(env, buffer, args, size);
     }
     return result;
 }
 
-jlong Java_com_syscallj_Bridge_io_1uring_1setup(JNIEnv * env, jclass c, jint entries, jobject params)
+jlong Java_com_syscallj_Bridge_io_1uring_1setup(JNIEnv *env, jclass c, jint entries, jobject params)
+{
+    int size;
+    auto buffer = readFromJava(env, params, &size);
+    auto ioUringParams = (io_uring_params *)buffer;
+    auto result = Syscall::io_uring_setup(entries, ioUringParams);
+    writeToJava(env, buffer, params, size);
+    return result;
+}
+
+jlong Java_com_syscallj_Bridge_io_1uring_1enter(JNIEnv *env, jclass c, jlong fd, jint to_submit, jint min_complete, jint flags, jintArray sig)
 {
     return 0;
 }
 
-jlong Java_com_syscallj_Bridge_io_1uring_1enter(JNIEnv * env, jclass c, jlong fd, jint to_submit, jint min_complete, jint flags, jint sig)
-{
-    return 0;
-}
-
-jlong Java_com_syscallj_Bridge_io_1uring_1register(JNIEnv * env, jclass c, jlong fd, jint opcode, jlong arg, jint nr_args)
+jlong Java_com_syscallj_Bridge_io_1uring_1register(JNIEnv *env, jclass c, jlong fd, jint opcode, jbyteArray jbyteArray, jint nr_args)
 {
     return 0;
 }
