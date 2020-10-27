@@ -1,8 +1,8 @@
 package com.syscallj;
 
 class Bridge {
-    static native String read(long fd, int size);
-    static native long write(long fd, String buffer, int size);
+    static native long read(long fd, byte[] buffer, int size);
+    static native long write(long fd, byte[] buffer, int size);
     static native long open(String fileName, int flags, short mode);
     static native long close(long fd);
     static native long mmap(long addr, long len, long prot, long flags, long fd, long off);

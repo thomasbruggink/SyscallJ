@@ -1,5 +1,6 @@
 package com.syscallj.app;
 
+import com.google.common.base.Charsets;
 import com.syscallj.*;
 
 import static java.lang.System.out;
@@ -13,13 +14,14 @@ public class App {
             out.println("Unable to open file " + SyscallError.valueOf(fd));
             return;
         }
-        var content = Syscall.read(fd, 2000);
-        if (content == null) {
+        var buffer = new byte[2000];
+        var result = Syscall.read(fd, buffer, buffer.length);
+        if (result < 0) {
             out.println("Could not read from file");
             return;
         }
         Syscall.close(fd);
-        out.println(content);
+        out.printf("Result: %d, %s\n", result, new String(buffer, 0, (int)result, Charsets.UTF_8));
     }
 
     static void write() {
@@ -32,8 +34,8 @@ public class App {
             out.println("Unable to open file: " + SyscallError.valueOf(fd));
             return;
         }
-        var content = "Hello World!";
-        var writeResult = Syscall.write(fd, content, content.length());
+        var content = "Hello World!".getBytes();
+        var writeResult = Syscall.write(fd, content, content.length);
         if (writeResult < 0) {
             out.println("Could not write to file " + SyscallError.valueOf(writeResult));
             return;
@@ -119,12 +121,12 @@ public class App {
         }
         out.printf("addr: 0x%x\n", addr);
         var result = Syscall.munmap(addr, length);
-        if(result < 0) {
+        if (result < 0) {
             out.println("Unable to make munmap call: " + SyscallError.valueOf(result));
             return;
         }
         result = Syscall.close(devZero);
-        if(result < 0) {
+        if (result < 0) {
             out.println("Unable to close /dev/zero: " + SyscallError.valueOf(result));
         }
     }
@@ -138,7 +140,7 @@ public class App {
         }
         out.printf("addr: 0x%x\n", addr);
         var result = Syscall.munmap(addr, length);
-        if(result < 0) {
+        if (result < 0) {
             out.println("Unable to make munmap call: " + SyscallError.valueOf(result));
         }
     }
@@ -147,12 +149,12 @@ public class App {
         System.setProperty("java.library.path", System.getProperty("java.library.path") + ":" + workDir + "/native/build/lib/main/debug");
         out.println(System.getProperty("java.library.path"));
 
-        read();
-        write();
-        readTerminalSettings();
-        readKvmVersion();
-        readKvmOptions();
-        memoryMapping();
-        memoryMappingNoFd();
+//        read();
+//        write();
+//        readTerminalSettings();
+//        readKvmVersion();
+//        readKvmOptions();
+//        memoryMapping();
+//        memoryMappingNoFd();
     }
 }

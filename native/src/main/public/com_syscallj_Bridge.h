@@ -10,18 +10,18 @@ extern "C" {
 /*
  * Class:     com_syscallj_Bridge
  * Method:    read
- * Signature: (JI)Ljava/lang/String;
+ * Signature: (J[BI)J
  */
-JNIEXPORT jstring JNICALL Java_com_syscallj_Bridge_read
-  (JNIEnv *, jclass, jlong, jint);
+JNIEXPORT jlong JNICALL Java_com_syscallj_Bridge_read
+  (JNIEnv *, jclass, jlong, jbyteArray, jint);
 
 /*
  * Class:     com_syscallj_Bridge
  * Method:    write
- * Signature: (JLjava/lang/String;I)J
+ * Signature: (J[BI)J
  */
 JNIEXPORT jlong JNICALL Java_com_syscallj_Bridge_write
-  (JNIEnv *, jclass, jlong, jstring, jint);
+  (JNIEnv *, jclass, jlong, jbyteArray, jint);
 
 /*
  * Class:     com_syscallj_Bridge

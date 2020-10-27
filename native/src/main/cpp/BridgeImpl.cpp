@@ -6,13 +6,18 @@
 using namespace std;
 using namespace syscallj;
 
-jbyteArray toJByteArray(JNIEnv *env, char *buffer, int size)
+jbyteArray toJByteArray(JNIEnv *env, const char *buffer, jbyteArray jBuffer, int size)
 {
-    auto jBuffer = env->NewByteArray(size);
     auto copyBuffer = env->GetPrimitiveArrayCritical(jBuffer, 0);
     memcpy(copyBuffer, buffer, size);
     env->ReleasePrimitiveArrayCritical(jBuffer, copyBuffer, 0);
     return jBuffer;
+}
+
+jbyteArray toJByteArray(JNIEnv *env, const char *buffer, int size)
+{
+    auto jBuffer = env->NewByteArray(size);
+    return toJByteArray(env, buffer, jBuffer, size);
 }
 
 void toCharArray(JNIEnv *env, jbyteArray from, char *to)
@@ -23,23 +28,23 @@ void toCharArray(JNIEnv *env, jbyteArray from, char *to)
     env->ReleasePrimitiveArrayCritical(from, copyBuffer, 0);
 }
 
-jstring Java_com_syscallj_Bridge_read(JNIEnv *env, jclass c, jlong jFd, jint jSize)
+jlong Java_com_syscallj_Bridge_read(JNIEnv *env, jclass c, jlong jFd, jbyteArray jBuffer, jint jSize)
 {
-    auto buffer = new char[jSize];
+    char buffer[jSize];
+    toCharArray(env, jBuffer, buffer);
     auto result = Syscall::read(jFd, buffer, jSize);
-    if (result < 0)
-    {
-        return nullptr;
+    if(result < 0) {
+        return result;
     }
-    return env->NewStringUTF(buffer);
+    toJByteArray(env, buffer, jBuffer, result);
+    return result;
 }
 
-jlong Java_com_syscallj_Bridge_write(JNIEnv *env, jclass c, jlong jFd, jstring jBuffer, jint size)
+jlong Java_com_syscallj_Bridge_write(JNIEnv *env, jclass c, jlong jFd, jbyteArray jBuffer, jint size)
 {
-    const char *input_ptr = env->GetStringUTFChars(jBuffer, nullptr);
-    auto content = string(input_ptr);
-    env->ReleaseStringUTFChars(jBuffer, input_ptr);
-    return Syscall::write(jFd, content.c_str(), size);
+    char buffer[size];
+    toCharArray(env, jBuffer, buffer);
+    return Syscall::write(jFd, buffer, size);
 }
 
 jlong Java_com_syscallj_Bridge_open(JNIEnv *env, jclass c, jstring jFileName, jint flags, jshort jMode)

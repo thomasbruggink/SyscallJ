@@ -4,12 +4,13 @@ public final class Syscall {
     /**
      * Syscall 0, read a file
      * fd: file descriptor to use
+     * buffer: the buffer to read into
      * size: amount of bytes to read
      * returns
-     * string the data read
+     * long: amount of bytes read
      */
-    public static String read(long fd, int size) {
-        return Bridge.read(fd, size);
+    public static long read(long fd, byte[] buffer, int size) {
+        return Bridge.read(fd, buffer, size);
     }
 
     /**
@@ -20,7 +21,7 @@ public final class Syscall {
      * returns
      * long: amount of bytes written
      */
-    public static long write(long fd, String buffer, int size) {
+    public static long write(long fd, byte[] buffer, int size) {
         return Bridge.write(fd, buffer, size);
     }
 
