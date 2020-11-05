@@ -6,75 +6,108 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 #include "Syscall.h"
+#include <sys/stat.h>
 
 using namespace syscallj;
 using namespace std;
 
-void readFile() {
+void readFile()
+{
     auto fd = Syscall::open("/proc/version", 0, 0);
-    if(fd <= 0) {
-        cout<<"Error opening file: "<<fd<<endl;
+    if (fd <= 0)
+    {
+        cout << "Error opening file: " << fd << endl;
         return;
     }
     char buffer[200];
     auto content = Syscall::read(fd, buffer, 200);
     Syscall::close(fd);
-    cout<<buffer<<endl;
+    cout << buffer << endl;
 }
 
-void writeFile() {
+void writeFile()
+{
     auto fd = Syscall::open("./test", 0101, 0660);
-    if(fd <= 0) {
-        cout<<"Error opening file: "<<fd<<endl;
+    if (fd <= 0)
+    {
+        cout << "Error opening file: " << fd << endl;
         return;
     }
     auto buffer = "Hello World!";
     auto content = Syscall::write(fd, buffer, sizeof(buffer));
-    if(content <= 0) {
-        cout<<"Error writing to file: "<<content<<endl;
+    if (content <= 0)
+    {
+        cout << "Error writing to file: " << content << endl;
         return;
     }
-    cout<<"Wrote "<<content<<" bytes"<<endl;
+    cout << "Wrote " << content << " bytes" << endl;
     Syscall::close(fd);
 }
 
-struct TCGetsResult {
-    int iflag; // input mode flags
-    int oflag; // output mode flags
-    int cflag; // control mode flags
-    int lflag; // local mode flags
-    char line; // line discipline
+void fstat()
+{
+    struct stat st;
+    auto fd = Syscall::open("/etc/ld.so.conf.d/libc.conf", 0, 0);
+    if (fd <= 0)
+    {
+        cout << "Error opening file: " << fd << endl;
+        return;
+    }
+    auto res = Syscall::fstat(fd, (const char *)&st);
+    if (res < 0)
+    {
+        cout << "Unable to fstat: " << res << endl;
+        return;
+    }
+    cout << "Object size: " << sizeof(st) << "\n";
+    cout << "Size: " << st.st_size << endl;
+}
+
+struct TCGetsResult
+{
+    int iflag;   // input mode flags
+    int oflag;   // output mode flags
+    int cflag;   // control mode flags
+    int lflag;   // local mode flags
+    char line;   // line discipline
     char cc[19]; // control characters
 };
 
-void readTerminalSettings() {
+void readTerminalSettings()
+{
     auto tcgets = 0x5401;
     TCGetsResult result;
     auto res = Syscall::ioctl(0, tcgets, (long)&result);
-    if(res < 0) {
-        cout<<"Error reading terminal information: "<<res<<endl;
+    if (res < 0)
+    {
+        cout << "Error reading terminal information: " << res << endl;
         return;
     }
-    cout<<"Cflag: "<<result.cflag<<endl;
+    cout << "Cflag: " << result.cflag << endl;
 }
 
-void mmap() {
+void mmap()
+{
     auto devZero = Syscall::open("/dev/zero", 2, 0);
-    if(devZero < 0) {
-        cout<<"Error opening /dev/zero "<<devZero<<endl;
+    if (devZero < 0)
+    {
+        cout << "Error opening /dev/zero " << devZero << endl;
         return;
     }
     auto res = Syscall::mmap(NULL, 1024, PROT_READ | PROT_WRITE, MAP_PRIVATE, devZero, 0);
-    cout<<"Res: "<<res<<endl;
+    cout << "Res: " << res << endl;
 }
 
-void mmapNoFd() {
+void mmapNoFd()
+{
     auto res = Syscall::mmap(NULL, 1024, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-    cout<<"Res: "<<res<<endl;
+    cout << "Res: " << res << endl;
 }
 
-int main () {
-    readFile();
+int main()
+{
+    // readFile();
+    fstat();
     // writeFile();
     // readTerminalSettings();
     // mmap();

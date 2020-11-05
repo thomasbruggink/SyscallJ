@@ -2,6 +2,7 @@ package com.syscallj.app;
 
 import com.google.common.base.Charsets;
 import com.syscallj.*;
+import com.syscallj.models.CompatStat;
 import com.syscallj.models.IoUringParams;
 import sun.misc.Unsafe;
 
@@ -37,19 +38,25 @@ public class App {
     }
 
     static void read() {
-        var fd = Syscall.open("/proc/version", FileFlags.NONE, FileModes.READ, FilePermissions.NONE);
+        var fd = Syscall.open("/etc/ld.so.conf.d/libc.conf", FileFlags.NONE, FileModes.READ, FilePermissions.NONE);
         if (fd <= 0) {
             out.println("Unable to open file " + SyscallError.valueOf(fd));
             return;
         }
-        var buffer = new byte[2000];
+        var stat = new CompatStat();
+        var fstatRes = Syscall.fstat(fd, stat);
+        if(fstatRes < 0) {
+            out.printf("Could not fstat file %d\n", fstatRes);
+            return;
+        }
+        var buffer = new byte[(int)stat.size];
         var result = Syscall.read(fd, buffer, buffer.length);
         if (result < 0) {
             out.println("Could not read from file");
             return;
         }
         Syscall.close(fd);
-        out.printf("Result: %d, %s\n", result, new String(buffer, 0, (int)result, Charsets.UTF_8));
+        out.printf("Result: %d\n%s\n", result, new String(buffer, 0, (int)result, Charsets.UTF_8));
     }
 
     static void write() {
@@ -203,7 +210,7 @@ public class App {
         System.setProperty("java.library.path", System.getProperty("java.library.path") + ":" + workDir + "/native/build/lib/main/debug");
         out.println(System.getProperty("java.library.path"));
 
-//        read();
+        read();
 //        write();
 //        readTerminalSettings();
 //        readKvmVersion();
@@ -211,6 +218,6 @@ public class App {
 //        memoryMapping();
 //        memoryMappingNoFd();
 //        unsafeMemory();
-        readIOUring();
+//        readIOUring();
     }
 }

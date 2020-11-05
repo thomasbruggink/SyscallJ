@@ -8,3 +8,4 @@ build
 *.prefs
 .idea/
 test
+.gdb_history

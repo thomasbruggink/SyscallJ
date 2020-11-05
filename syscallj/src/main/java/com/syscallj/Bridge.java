@@ -5,6 +5,7 @@ class Bridge {
     static native long write(long fd, byte[] buffer, int size);
     static native long open(String fileName, int flags, short mode);
     static native long close(long fd);
+    static native long fstat(long fd, Object compatStat);
     static native long mmap(long addr, long len, long prot, long flags, long fd, long off);
     static native long mprotect(long addr, long len, long prot);
     static native long munmap(long addr, long len); 

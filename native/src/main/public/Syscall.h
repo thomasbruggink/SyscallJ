@@ -45,6 +45,15 @@ namespace syscallj
          */
         static long close(long fd);
         /**
+         * Syscall 5, fstat a file
+         * params:
+         * fd: the file descriptor to fstat
+         * compatStat: data to read struct compat_stat into arch/x86/include/asm/compat.h
+         * returns:
+         * long: fstat result code
+         */
+        static long fstat(long fd, const char *compatStat);
+        /**
          * Syscall 9, memory map
          * params:
          * addr: start address hint (0 to let the kernel decide)
@@ -75,7 +84,7 @@ namespace syscallj
          * returns:
          * long: unmap result code
          */
-        static long munmap(unsigned long addr, unsigned long len);        
+        static long munmap(unsigned long addr, unsigned long len);
         /**
          * Syscall 16, ioctl
          * params:
@@ -117,6 +126,7 @@ namespace syscallj
          * long: ioctl result code
          */
         static long io_uring_register(long fd, unsigned int opcode, void *arg, unsigned int nr_args);
+
     private:
         static long syscall(int c...);
     };

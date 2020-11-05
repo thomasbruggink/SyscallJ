@@ -27,6 +27,12 @@ long Syscall::close(long fd)
     return syscall(1, CLOSE, fd);
 }
 
+long Syscall::fstat(long fd, const char *compatStat)
+{
+    const int FSTAT = 5;
+    return syscall(2, FSTAT, fd, compatStat);
+}
+
 long Syscall::mmap(unsigned long addr, unsigned long len, unsigned long prot, unsigned long long flags, unsigned long fd, unsigned long off)
 {
     const int MMAP = 9;

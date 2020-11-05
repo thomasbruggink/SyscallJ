@@ -1,5 +1,6 @@
 package com.syscallj;
 
+import com.syscallj.models.CompatStat;
 import com.syscallj.models.IoUringParams;
 
 public final class Syscall {
@@ -73,6 +74,18 @@ public final class Syscall {
      */
     public static long close(long fd) {
         return Bridge.close(fd);
+    }
+
+    /**
+     * Syscall 5, fstat a file
+     * params:
+     * fd: the file descriptor to fstat
+     * compatStat: data to read struct compat_stat into arch/x86/include/asm/compat.h
+     * returns:
+     * long: fstat result code
+     */
+    public static long fstat(long fd, CompatStat compatStat) {
+        return Bridge.fstat(fd, compatStat);
     }
 
     /**

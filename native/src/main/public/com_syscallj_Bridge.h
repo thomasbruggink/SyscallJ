@@ -41,6 +41,14 @@ JNIEXPORT jlong JNICALL Java_com_syscallj_Bridge_close
 
 /*
  * Class:     com_syscallj_Bridge
+ * Method:    fstat
+ * Signature: (JLjava/lang/Object;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_syscallj_Bridge_fstat
+  (JNIEnv *, jclass, jlong, jobject);
+
+/*
+ * Class:     com_syscallj_Bridge
  * Method:    mmap
  * Signature: (JJJJJJ)J
  */

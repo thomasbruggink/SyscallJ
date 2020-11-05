@@ -1,5 +1,6 @@
 #include "com_syscallj_Bridge.h"
 #include "Syscall.h"
+#include <sys/stat.h>
 #include <string>
 #include <cstring>
 
@@ -70,6 +71,15 @@ jlong Java_com_syscallj_Bridge_open(JNIEnv *env, jclass c, jstring jFileName, ji
     auto content = string(input_ptr);
     env->ReleaseStringUTFChars(jFileName, input_ptr);
     return Syscall::open(content.c_str(), flags, jMode);
+}
+
+jlong Java_com_syscallj_Bridge_fstat(JNIEnv *env, jclass c, jlong jFd, jobject jCompatStat)
+{
+    int size;
+    struct stat *buffer = (struct stat *)readFromJava(env, jCompatStat, &size);
+    auto result = Syscall::fstat(jFd, (const char*)buffer);
+    writeToJava(env, (char*)buffer, jCompatStat, size);
+    return result;
 }
 
 jlong Java_com_syscallj_Bridge_mmap(JNIEnv *env, jclass c, jlong addr, jlong len, jlong prot, jlong flags, jlong fd, jlong off)

@@ -1,6 +1,7 @@
 package com.syscallj;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public abstract class SyscallObject {
     public int getSize() throws IllegalAccessException {
@@ -74,6 +75,7 @@ public abstract class SyscallObject {
 
     public void writeObject(byte[] data) throws IllegalAccessException {
         var wrapper = ByteBuffer.wrap(data);
+        wrapper.order(ByteOrder.LITTLE_ENDIAN);
         var fields = this.getClass().getDeclaredFields();
         for (var field : fields) {
             var type = field.getType().getTypeName();
@@ -153,6 +155,7 @@ public abstract class SyscallObject {
     public byte[] readObject() throws IllegalAccessException {
         byte[] data = new byte[getSize()];
         var wrapper = ByteBuffer.wrap(data);
+        wrapper.order(ByteOrder.LITTLE_ENDIAN);
         var fields = this.getClass().getDeclaredFields();
         for (var field : fields) {
             var type = field.getType().getTypeName();
