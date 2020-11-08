@@ -1,7 +1,12 @@
 package com.syscallj;
 
+import com.syscallj.enums.FileFlags;
+import com.syscallj.enums.FileModes;
+import com.syscallj.enums.FilePermissions;
+import com.syscallj.enums.IoUringEnterFlags;
 import com.syscallj.models.CompatStat;
 import com.syscallj.models.IoUringParams;
+import com.syscallj.models.IoUringSigSet;
 
 public final class Syscall {
     /**
@@ -77,10 +82,10 @@ public final class Syscall {
     }
 
     /**
-     * Syscall 5, fstat a file
+     * Syscall 5, fstat a file to get information about the file
      * params:
      * fd: the file descriptor to fstat
-     * compatStat: data to read struct compat_stat into arch/x86/include/asm/compat.h
+     * compatStat: data will be read into this struct. compat_stat into arch/x86/include/asm/compat.h
      * returns:
      * long: fstat result code
      */
@@ -144,10 +149,10 @@ public final class Syscall {
 
     /**
      * Syscall 425, io_uring_setup
-     * entries:
-     * params:
+     * entries: the amount of SQ and CQ entries to use
+     * params: io uring params object to fill
      * returns:
-     * long: file descriptor on success, <0 on error
+     * long: uring file descriptor on success, <0 on error
      */
     public static long io_uring_setup(int entries, IoUringParams params)
     {
@@ -157,24 +162,24 @@ public final class Syscall {
     /**
      * Syscall 426, io_uring_enter
      * params:
-     * fd: the file descriptor
-     * to_submit:
+     * fd: the io uring file descriptor
+     * to_submit: how many jobs to submit from the (tail - job count)
      * min_complete:
      * flags:
      * sig:
      * returns:
-     * long:
+     * long: io uring enter result code
      */
-    public static long io_uring_enter(long fd, int to_submit, int min_complete, int flags, int[] sig)
+    public static long io_uring_enter(long fd, int to_submit, int min_complete, IoUringEnterFlags flags, IoUringSigSet sig)
     {
-        return Bridge.io_uring_enter(fd, to_submit, min_complete, flags, sig);
+        return Bridge.io_uring_enter(fd, to_submit, min_complete, flags.getValue(), sig);
     }
 
     /**
      * Syscall 427, io_uring_register
      * params:
      * fd: the file descriptor
-     * opcode: the opcode to run?
+     * opcode: the operation to run
      * arg: arguments to pass to the command
      * nr_args: number of arguments
      * returns:

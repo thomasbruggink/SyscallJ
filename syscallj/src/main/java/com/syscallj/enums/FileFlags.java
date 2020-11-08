@@ -1,4 +1,4 @@
-package com.syscallj;
+package com.syscallj.enums;
 
 public enum FileFlags {
     NONE(0),

@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <linux/types.h>
+#include <bits/types/sigset_t.h>
 
 namespace syscallj
 {
@@ -106,7 +107,7 @@ namespace syscallj
         /**
          * Syscall 426, io_uring_enter
          * params:
-         * fd: the file descriptor
+         * fd: the rings file descriptor
          * to_submit: 
          * min_complete: 
          * flags: 
@@ -114,7 +115,7 @@ namespace syscallj
          * returns:
          * long: 
          */
-        static long io_uring_enter(long fd, unsigned int to_submit, unsigned int min_complete, unsigned int flags, int *sig);
+        static long io_uring_enter(long fd, unsigned int to_submit, unsigned int min_complete, unsigned int flags, sigset_t *sig);
         /**
          * Syscall 427, io_uring_register
          * params:

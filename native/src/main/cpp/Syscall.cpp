@@ -63,7 +63,7 @@ long Syscall::io_uring_setup(unsigned int entries, struct io_uring_params *param
     return syscall(2, IO_URING_SETUP, entries, params);
 }
        
-long Syscall::io_uring_enter(long fd, unsigned int to_submit, unsigned int min_complete, unsigned int flags, int *sig)
+long Syscall::io_uring_enter(long fd, unsigned int to_submit, unsigned int min_complete, unsigned int flags, sigset_t *sig)
 {
     const int IO_URING_ENTER = 426;
     return syscall(5, IO_URING_ENTER, fd, to_submit, min_complete, flags, sig);

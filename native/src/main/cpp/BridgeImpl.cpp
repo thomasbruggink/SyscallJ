@@ -7,6 +7,11 @@
 using namespace std;
 using namespace syscallj;
 
+int readSize(JNIEnv *env, jobject args) {
+    auto getSize = env->GetMethodID(env->GetObjectClass(args), "getSize", "()I");
+    return env->CallIntMethod(args, getSize);
+}
+
 jbyteArray toJByteArray(JNIEnv *env, const char *buffer, jbyteArray jBuffer, int size)
 {
     auto copyBuffer = env->GetPrimitiveArrayCritical(jBuffer, 0);
@@ -45,6 +50,13 @@ char *readFromJava(JNIEnv *env, jobject args, int *size)
     return buffer;
 }
 
+void readFromJava(JNIEnv *env, jobject args, char* ptr, int *size)
+{
+    auto readObject = env->GetMethodID(env->GetObjectClass(args), "readObject", "()[B");
+    auto argData = (jbyteArray)env->CallObjectMethod(args, readObject);
+    toCharArray(env, argData, ptr);
+}
+
 jlong Java_com_syscallj_Bridge_read(JNIEnv *env, jclass c, jlong jFd, jbyteArray jBuffer, jint jSize)
 {
     char buffer[jSize];
@@ -73,12 +85,18 @@ jlong Java_com_syscallj_Bridge_open(JNIEnv *env, jclass c, jstring jFileName, ji
     return Syscall::open(content.c_str(), flags, jMode);
 }
 
+jlong Java_com_syscallj_Bridge_close(JNIEnv *, jclass c, jlong jFd)
+{
+    return Syscall::close(jFd);
+}
+
 jlong Java_com_syscallj_Bridge_fstat(JNIEnv *env, jclass c, jlong jFd, jobject jCompatStat)
 {
     int size;
     struct stat *buffer = (struct stat *)readFromJava(env, jCompatStat, &size);
-    auto result = Syscall::fstat(jFd, (const char*)buffer);
-    writeToJava(env, (char*)buffer, jCompatStat, size);
+    auto result = Syscall::fstat(jFd, (const char *)buffer);
+    writeToJava(env, (char *)buffer, jCompatStat, size);
+    delete buffer;
     return result;
 }
 
@@ -110,6 +128,7 @@ jlong Java_com_syscallj_Bridge_ioctl(JNIEnv *env, jclass c, jlong fd, jlong cmd,
         auto buffer = readFromJava(env, args, &size);
         result = Syscall::ioctl(fd, cmd, (long int)buffer);
         writeToJava(env, buffer, args, size);
+        delete buffer;
     }
     return result;
 }
@@ -121,12 +140,27 @@ jlong Java_com_syscallj_Bridge_io_1uring_1setup(JNIEnv *env, jclass c, jint entr
     auto ioUringParams = (io_uring_params *)buffer;
     auto result = Syscall::io_uring_setup(entries, ioUringParams);
     writeToJava(env, buffer, params, size);
+    delete buffer;
     return result;
 }
 
-jlong Java_com_syscallj_Bridge_io_1uring_1enter(JNIEnv *env, jclass c, jlong fd, jint to_submit, jint min_complete, jint flags, jintArray sig)
+jlong Java_com_syscallj_Bridge_io_1uring_1enter(JNIEnv *env, jclass c, jlong fd, jint to_submit, jint min_complete, jint flags, jobject jSig)
 {
-    return 0;
+    int result;
+    if (jSig == nullptr)
+    {
+        result = Syscall::io_uring_enter(fd, to_submit, min_complete, flags, nullptr);
+    }
+    else
+    {
+        int size;
+        auto buffer = readFromJava(env, jSig, &size);
+        auto sig = (sigset_t *)buffer;
+        result = Syscall::io_uring_enter(fd, to_submit, min_complete, flags, sig);
+        writeToJava(env, buffer, jSig, size);
+        delete buffer;
+    }
+    return result;
 }
 
 jlong Java_com_syscallj_Bridge_io_1uring_1register(JNIEnv *env, jclass c, jlong fd, jint opcode, jbyteArray jbyteArray, jint nr_args)
@@ -134,7 +168,22 @@ jlong Java_com_syscallj_Bridge_io_1uring_1register(JNIEnv *env, jclass c, jlong 
     return 0;
 }
 
-jlong Java_com_syscallj_Bridge_close(JNIEnv *, jclass c, jlong jFd)
+void Java_com_syscallj_Bridge_read_1address_1as(JNIEnv * env, jclass c, jlong addr, jobject dest, jboolean withBarrier)
 {
-    return Syscall::close(jFd);
+    auto ptr = (char*)addr;
+    auto size = readSize(env, dest);
+    if(withBarrier) {
+        __asm__ __volatile__("":::"memory");
+    }
+    writeToJava(env, ptr, dest, size);
+}
+
+void Java_com_syscallj_Bridge_write_1to_1address(JNIEnv *env, jclass c, jobject args, jlong addr, jboolean withBarrier)
+{
+    auto ptr = (char*)addr;
+    int size;
+    if(withBarrier) {
+        __asm__ __volatile__("":::"memory");
+    }
+    readFromJava(env, args, ptr, &size);
 }

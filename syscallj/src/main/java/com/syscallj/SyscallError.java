@@ -39,9 +39,9 @@ public enum SyscallError {
     EDOM(33, "Math argument out of domain of func"),
     ERANGE(34, "Math result not representable");
 
-    private short value;
-    private String message;
-    private static Map<Short, SyscallError> map = new HashMap<>();
+    private final short value;
+    private final String message;
+    private static final Map<Short, SyscallError> map = new HashMap<>();
 
     static {
         for (SyscallError error : SyscallError.values()) {
@@ -49,7 +49,7 @@ public enum SyscallError {
         }
     }
 
-    private SyscallError(int value, String message) {
+    SyscallError(int value, String message) {
         this.value = (short)value;
         this.message = message;
     }

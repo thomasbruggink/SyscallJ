@@ -90,10 +90,10 @@ JNIEXPORT jlong JNICALL Java_com_syscallj_Bridge_io_1uring_1setup
 /*
  * Class:     com_syscallj_Bridge
  * Method:    io_uring_enter
- * Signature: (JIII[I)J
+ * Signature: (JIIILjava/lang/Object;)J
  */
 JNIEXPORT jlong JNICALL Java_com_syscallj_Bridge_io_1uring_1enter
-  (JNIEnv *, jclass, jlong, jint, jint, jint, jintArray);
+  (JNIEnv *, jclass, jlong, jint, jint, jint, jobject);
 
 /*
  * Class:     com_syscallj_Bridge
@@ -102,6 +102,22 @@ JNIEXPORT jlong JNICALL Java_com_syscallj_Bridge_io_1uring_1enter
  */
 JNIEXPORT jlong JNICALL Java_com_syscallj_Bridge_io_1uring_1register
   (JNIEnv *, jclass, jlong, jint, jbyteArray, jint);
+
+/*
+ * Class:     com_syscallj_Bridge
+ * Method:    read_address_as
+ * Signature: (JLjava/lang/Object;Z)V
+ */
+JNIEXPORT void JNICALL Java_com_syscallj_Bridge_read_1address_1as
+  (JNIEnv *, jclass, jlong, jobject, jboolean);
+
+/*
+ * Class:     com_syscallj_Bridge
+ * Method:    write_to_address
+ * Signature: (Ljava/lang/Object;JZ)V
+ */
+JNIEXPORT void JNICALL Java_com_syscallj_Bridge_write_1to_1address
+  (JNIEnv *, jclass, jobject, jlong, jboolean);
 
 #ifdef __cplusplus
 }

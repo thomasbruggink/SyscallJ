@@ -1,4 +1,4 @@
-package com.syscallj;
+package com.syscallj.enums;
 
 public enum MemoryProtection {
     READ(0x1), // page can be read
@@ -9,13 +9,13 @@ public enum MemoryProtection {
     GROWSDOWN(0x01000000), // mprotect flag: extend change to start of growsdown vma
     GROWSUP(0x02000000); // mprotect flag: extend change to end of growsup vma
 
-    private short value;
+    private long value;
 
-    MemoryProtection(int value) {
-        this.value = (short) value;
+    MemoryProtection(long value) {
+        this.value = value;
     }
 
-    public short getValue() {
+    public long getValue() {
         return value;
     }
 }

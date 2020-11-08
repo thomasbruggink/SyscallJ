@@ -8,6 +8,6 @@ public class IoCqringOffsets extends SyscallObject {
     public int ringMask; // ring mask value
     public int ringEntries; // entries in the ring
     public int overflow;
-    public int cqes;
+    public int cqes; // pointer to a list of cq entries
     public long[] resv = new long[2]; // reserved
 }

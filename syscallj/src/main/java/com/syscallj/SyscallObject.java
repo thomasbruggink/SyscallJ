@@ -32,6 +32,11 @@ public abstract class SyscallObject {
                     size += result.length * 4;
                     break;
                 }
+                case "short[]": {
+                    short[] result = (short[]) field.get(this);
+                    size += result.length * 2;
+                    break;
+                }
                 case "byte[]": {
                     byte[] result = (byte[]) field.get(this);
                     size += result.length;
@@ -43,6 +48,7 @@ public abstract class SyscallObject {
                     break;
                 }
                 case "byte":
+                // java char is 2 bytes we only want 1
                 case "char": {
                     size += 1;
                     break;
@@ -106,17 +112,22 @@ public abstract class SyscallObject {
                     }
                     break;
                 }
+                case "short[]": {
+                    var result = (short[]) field.get(this);
+                    for (var i = 0; i < result.length; i++) {
+                        result[i] = wrapper.getShort();
+                    }
+                    break;
+                }
                 case "byte[]": {
                     var result = (byte[]) field.get(this);
                     wrapper.get(result, 0, result.length - 1);
                     break;
                 }
-                case "byte": {
-                    field.set(this, (byte) wrapper.getChar());
-                    break;
-                }
+                case "byte":
+                // java char is 2 bytes we only want 1
                 case "char": {
-                    field.set(this, wrapper.getChar());
+                    field.set(this, wrapper.get());
                     break;
                 }
                 default: {
@@ -186,6 +197,13 @@ public abstract class SyscallObject {
                     }
                     break;
                 }
+                case "short[]": {
+                    var result = (short[]) field.get(this);
+                    for (var i : result) {
+                        wrapper.putShort(i);
+                    }
+                    break;
+                }
                 case "byte[]": {
                     wrapper.put((byte[]) field.get(this));
                     break;
@@ -195,7 +213,8 @@ public abstract class SyscallObject {
                     break;
                 }
                 case "char": {
-                    wrapper.putChar(field.getChar(this));
+                    // java char is 2 bytes we only want 1
+                    wrapper.putChar((char)field.getByte(this));
                     break;
                 }
                 default: {
