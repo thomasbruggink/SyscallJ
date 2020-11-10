@@ -7,6 +7,8 @@ import com.syscallj.enums.*;
 import com.syscallj.models.*;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import static java.lang.System.out;
 
@@ -183,12 +185,12 @@ public class App {
         // For more information about io_uring check https://kernel.dk/io_uring.pdf
 
         // Read the README.md file from this project
-        var file1 = workDir + "/README.md";
+        var file = workDir + "/README.md";
         int qd = 2; // amount of submission_queue/communication_queue entries to use (the amount of parallel requests that can be send at once) we only need 2 for this example
         var unsafe = MemoryHelper.getUnsafe();
 
         // Open file to read
-        var fd = Syscall.open(file1, FileModes.READ);
+        var fd = Syscall.open(file, FileModes.READ);
         if (fd <= 0) {
             out.println("Unable to open file1 " + SyscallError.valueOf(fd));
             return;
@@ -383,7 +385,91 @@ public class App {
         Syscall.close(fd);
     }
 
-    public static void main(String[] args) throws IllegalAccessException {
+    static void readIOUringHelper() throws ExecutionException, InterruptedException {
+        // Init the helper
+        try(var uring = new IoUring(10)) {
+            uring.startPolling(false);
+            // Or manually poll
+            // uring.poll();
+
+            var file = workDir + "/README.md";
+            var fd = (int) Syscall.open(file, FileModes.READ);
+            var stat = new CompatStat();
+            Syscall.fstat(fd, stat);
+            var future = uring.queueRead(fd, (int) stat.size, 0).thenAccept(bytes -> {
+                out.printf("Result: \n%s\n", new String(bytes, StandardCharsets.UTF_8));
+            });
+            uring.submitQueue();
+
+            // Blocking get
+            future.get();
+        }
+    }
+
+    static void writeIOUringHelper() throws ExecutionException, InterruptedException {
+        // Init the helper
+        try (var uring = new IoUring(10)) {
+            uring.startPolling(false);
+            // Or manually poll
+            // uring.poll();
+
+            var file = workDir + "/test";
+            var fd = (int) Syscall.open(file, FileFlags.CREATE.getValue(), FileModes.WRITE.getValue(),
+                    (short) (FilePermissions.WGRP.getValue() |
+                            FilePermissions.RGRP.getValue() |
+                            FilePermissions.WUSR.getValue() |
+                            FilePermissions.RUSR.getValue()));
+            if (fd <= 0) {
+                out.println("Unable to open file: " + SyscallError.valueOf(fd));
+                return;
+            }
+            var data = "Hello World!".getBytes(StandardCharsets.UTF_8);
+
+            var future = uring.queueWrite(fd, data, 0).thenAccept(result -> {
+                out.printf("Bytes written: %d\n", result);
+            });
+            uring.submitQueue();
+
+            // Blocking get
+            future.get();
+        }
+    }
+
+    static void multiReadWriteIOUringHelper() throws ExecutionException, InterruptedException {
+        // Init the helper
+        try (var uring = new IoUring(10)) {
+            uring.startPolling(false);
+            // Or manually poll
+            // uring.poll();
+
+            var readFd1 = (int) Syscall.open(workDir + "/README.md", FileModes.READ);
+            var readFd2 = (int) Syscall.open(workDir + "/settings.gradle", FileModes.READ);
+            var writeFd = (int) Syscall.open(workDir + "/test", FileFlags.CREATE.getValue(), FileModes.WRITE.getValue(),
+                    (short) (FilePermissions.WGRP.getValue() |
+                            FilePermissions.RGRP.getValue() |
+                            FilePermissions.WUSR.getValue() |
+                            FilePermissions.RUSR.getValue()));
+
+            var readFuture1 = uring.queueRead(readFd1, 20, 0).thenAccept(bytes -> {
+                out.printf("ReadFuture 1: \n%s\n", new String(bytes, StandardCharsets.UTF_8));
+            });
+            var readFuture2 = uring.queueRead(readFd1, 20, 20).thenAccept(bytes -> {
+                out.printf("ReadFuture 2: \n%s\n", new String(bytes, StandardCharsets.UTF_8));
+            });
+            var readFuture3 = uring.queueRead(readFd2, 300, 0).thenAccept(bytes -> {
+                out.printf("ReadFuture 3: \n%s\n", new String(bytes, StandardCharsets.UTF_8));
+            });
+            var writeFuture = uring.queueWrite(writeFd, "Hello World!".getBytes(StandardCharsets.UTF_8), 0).thenAccept(result -> {
+                out.printf("WriteFuture: %d\n", result);
+            });
+            uring.submitQueue();
+
+            // Block
+            CompletableFuture.allOf(readFuture1, readFuture2, readFuture3, writeFuture).get();
+        }
+    }
+
+    public static void main(String[] args) throws IllegalAccessException, ExecutionException, InterruptedException {
         System.setProperty("java.library.path", System.getProperty("java.library.path") + ":" + workDir + "/native/build/lib/main/debug");
         out.println(System.getProperty("java.library.path"));
 
@@ -395,6 +481,9 @@ public class App {
 //        memoryMapping();
 //        memoryMappingNoFd();
 //        unsafeMemory();
-        readIOUring();
+//        readIOUring();
+//        readIOUringHelper();
+//        writeIOUringHelper();
+        multiReadWriteIOUringHelper();
     }
 }
