@@ -289,26 +289,26 @@ public class App {
         // We are going to send 2 reads to the ring buffer so fill 2 SQ elements with offsets and pointers to io_vec
         var index = tail & unsafe.getInt(sqMaskPtr);
         // Create the first submission entry
-        MemoryHelper.readAddressAs(sqes[index], sqe, true); // take the sqe at the first index
+        MemoryHelper.readAddressAs(sqes[index], sqe); // take the sqe at the first index
         sqe.setOpcode(IoUringOpFlags.READV); // we want to read
         sqe.fd = (int) fd; // from the file we opened
         sqe.off = 0; // start from the beginning
         sqe.addr = ioVecData1; // read into the iovec pointer
         sqe.len = (int) size1; // the size of the first part
         sqe.userData = ioVecData1; // this can be anything but lets pass the first buffer so we can read it back from the cqe
-        MemoryHelper.writeToAddress(sqe, sqes[index], true); // write the modified sqe back
+        MemoryHelper.writeToAddress(sqe, sqes[index]); // write the modified sqe back
         unsafe.putInt(array[index], 0); // Update the array
         tail++; // increment the tail
 
         // Same for the second entry
-        MemoryHelper.readAddressAs(sqes[index + 1], sqe, true); // take the sqe at the second index
+        MemoryHelper.readAddressAs(sqes[index + 1], sqe); // take the sqe at the second index
         sqe.setOpcode(IoUringOpFlags.READV); // we want to read
         sqe.fd = (int) fd; // from the file we opened
         sqe.off = 0; // start from the beginning
         sqe.addr = ioVecData2; // read into the iovec pointer
         sqe.len = (int) size2; // the size of the second part
         sqe.userData = ioVecData2; // this can be anything but lets pass the second buffer so we can read it back from the cqe
-        MemoryHelper.writeToAddress(sqe, sqes[index + 1], true); // write the modified sqe back
+        MemoryHelper.writeToAddress(sqe, sqes[index + 1]); // write the modified sqe back
         unsafe.putInt(array[index + 1], 1); // Update the array
         tail++; // increment the tail
 
@@ -331,7 +331,7 @@ public class App {
             if(cqTail - cqHead == 2)
                 break;
             // This will block until min_complete events have been completed
-            submitResult = Syscall.io_uring_enter(uringFd, 0, 1, IoUringEnterFlags.ENTER_GETEVENTS, null);
+            submitResult = Syscall.io_uring_enter(uringFd, 0, 4, IoUringEnterFlags.ENTER_GETEVENTS, null);
             if (submitResult < 0) {
                 out.printf("Error while submitting ring data: %d, %s\n", submitResult, SyscallError.valueOf(submitResult).getMessage());
                 return;

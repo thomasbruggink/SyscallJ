@@ -106,18 +106,18 @@ JNIEXPORT jlong JNICALL Java_com_syscallj_Bridge_io_1uring_1register
 /*
  * Class:     com_syscallj_Bridge
  * Method:    read_address_as
- * Signature: (JLjava/lang/Object;Z)V
+ * Signature: (JLjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_com_syscallj_Bridge_read_1address_1as
-  (JNIEnv *, jclass, jlong, jobject, jboolean);
+  (JNIEnv *, jclass, jlong, jobject);
 
 /*
  * Class:     com_syscallj_Bridge
  * Method:    write_to_address
- * Signature: (Ljava/lang/Object;JZ)V
+ * Signature: (Ljava/lang/Object;J)V
  */
 JNIEXPORT void JNICALL Java_com_syscallj_Bridge_write_1to_1address
-  (JNIEnv *, jclass, jobject, jlong, jboolean);
+  (JNIEnv *, jclass, jobject, jlong);
 
 #ifdef __cplusplus
 }

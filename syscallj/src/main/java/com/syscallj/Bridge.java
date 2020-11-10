@@ -16,8 +16,8 @@ class Bridge {
     static native long io_uring_register(long fd, int opcode, byte[] arg, int nr_args);
 
     // Memory helpers
-    static native void read_address_as(long addr, Object dest, boolean withBarrier);
-    static native void write_to_address(Object dest, long addr, boolean withBarrier);
+    static native void read_address_as(long addr, Object dest);
+    static native void write_to_address(Object dest, long addr);
 
     static {
         System.loadLibrary("native");

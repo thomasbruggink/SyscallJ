@@ -6,19 +6,11 @@ import java.lang.reflect.Field;
 
 public final class MemoryHelper {
     public static void readAddressAs(long addr, SyscallObject args) {
-        readAddressAs(addr, args, false);
-    }
-
-    public static void readAddressAs(long addr, SyscallObject args, boolean withBarrier) {
-        Bridge.read_address_as(addr, args, withBarrier);
+        Bridge.read_address_as(addr, args);
     }
 
     public static void writeToAddress(SyscallObject args, long addr) {
-        Bridge.write_to_address(args, addr, false);
-    }
-
-    public static void writeToAddress(SyscallObject args, long addr, boolean withBarrier) {
-        Bridge.write_to_address(args, addr, withBarrier);
+        Bridge.write_to_address(args, addr);
     }
 
     public static Unsafe getUnsafe() {

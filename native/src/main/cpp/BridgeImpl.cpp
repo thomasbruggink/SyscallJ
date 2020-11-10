@@ -168,22 +168,16 @@ jlong Java_com_syscallj_Bridge_io_1uring_1register(JNIEnv *env, jclass c, jlong 
     return 0;
 }
 
-void Java_com_syscallj_Bridge_read_1address_1as(JNIEnv * env, jclass c, jlong addr, jobject dest, jboolean withBarrier)
+void Java_com_syscallj_Bridge_read_1address_1as(JNIEnv * env, jclass c, jlong addr, jobject dest)
 {
     auto ptr = (char*)addr;
     auto size = readSize(env, dest);
-    if(withBarrier) {
-        __asm__ __volatile__("":::"memory");
-    }
     writeToJava(env, ptr, dest, size);
 }
 
-void Java_com_syscallj_Bridge_write_1to_1address(JNIEnv *env, jclass c, jobject args, jlong addr, jboolean withBarrier)
+void Java_com_syscallj_Bridge_write_1to_1address(JNIEnv *env, jclass c, jobject args, jlong addr)
 {
     auto ptr = (char*)addr;
     int size;
-    if(withBarrier) {
-        __asm__ __volatile__("":::"memory");
-    }
     readFromJava(env, args, ptr, &size);
 }
