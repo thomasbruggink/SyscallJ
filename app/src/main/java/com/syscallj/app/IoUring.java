@@ -15,22 +15,22 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class IoUring implements AutoCloseable {
-    final int ringFd;
-    final IoUringParams ring;
-    final IoUringSq sq;
-    final IoUringCq cq;
+    private final int ringFd;
+    private final IoUringParams ring;
+    private final IoUringSq sq;
+    private final IoUringCq cq;
 
-    final Map<Long, CompletableFuture<byte[]>> readCallbacks;
-    final Map<Long, CompletableFuture<Integer>> writeCallbacks;
-    final long[] ioVecDataPtr;
-    final int ioVecDataPtrSize;
+    private final Map<Long, CompletableFuture<byte[]>> readCallbacks;
+    private final Map<Long, CompletableFuture<Integer>> writeCallbacks;
+    private final long[] ioVecDataPtr;
+    private final int ioVecDataPtrSize;
 
     private final Unsafe unsafe;
 
-    boolean blockLoop;
-    boolean loop = false;
-    CompletableFuture<Void> loopStopped;
-    Thread loopThread;
+    private boolean blockLoop;
+    private boolean loop = false;
+    private CompletableFuture<Void> loopStopped;
+    private Thread loopThread;
 
     public IoUring(int queueSize) {
         unsafe = MemoryHelper.getUnsafe();
@@ -58,7 +58,8 @@ public class IoUring implements AutoCloseable {
         }
     }
 
-    public void poll() {
+    public int poll() {
+        var processed = 0;
         var head = cq.getHead();
         while (head < cq.getTail()) {
             var index = head & cq.getMask();
@@ -87,8 +88,10 @@ public class IoUring implements AutoCloseable {
             }
             MemoryHelper.free(ioVec.base, ioVec.len);
             head++;
+            processed++;
         }
         cq.setHead(head);
+        return processed;
     }
 
     public void startPolling(boolean block) {
@@ -217,7 +220,7 @@ public class IoUring implements AutoCloseable {
         }
     }
 
-    public class IoUringSq implements AutoCloseable {
+    private class IoUringSq implements AutoCloseable {
         final long head;
         final long tail;
         final long mask;
@@ -299,7 +302,7 @@ public class IoUring implements AutoCloseable {
         }
     }
 
-    public class IoUringCq implements AutoCloseable {
+    private class IoUringCq implements AutoCloseable {
         final long head;
         final long tail;
         final long mask;

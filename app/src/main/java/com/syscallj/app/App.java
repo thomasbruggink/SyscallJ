@@ -15,19 +15,6 @@ import static java.lang.System.out;
 public class App {
     static String workDir = System.getProperty("user.dir");
 
-    static void memset(long addr, long size, int val) {
-        var unsafe = MemoryHelper.getUnsafe();
-        unsafe.setMemory(addr, size, (byte) val);
-    }
-
-    static long malloc(long size) {
-        return Syscall.mmap(0, size, MemoryProtection.READ.getValue() | MemoryProtection.WRITE.getValue(), MemoryFlags.SHARED.getValue() | MemoryFlags.ANONYMOUS.getValue(), -1, 0);
-    }
-
-    static void free(long addr, long size) {
-        Syscall.munmap(addr, size);
-    }
-
     static void read() {
         var fd = Syscall.open(workDir + "/README.md", FileFlags.NONE, FileModes.READ, FilePermissions.NONE);
         if (fd <= 0) {
@@ -265,10 +252,10 @@ public class App {
         // Split into 2 reads
         var size1 = Math.abs(stat.size / 2);
         var size2 = stat.size - size1;
-        var addr1 = malloc(size1);
-        var addr2 = malloc(size2);
-        memset(addr1, size1, 0);
-        memset(addr2, size2, 0);
+        var addr1 = MemoryHelper.malloc(size1);
+        var addr2 = MemoryHelper.malloc(size2);
+        MemoryHelper.memset(addr1, size1, 0);
+        MemoryHelper.memset(addr2, size2, 0);
 
         var tail = unsafe.getInt(sqTailPtr);
         // Check if there is enough queue space for 2 reads
@@ -280,12 +267,12 @@ public class App {
         // Setup first read
         ioVec.base = addr1;
         ioVec.len = size1;
-        var ioVecData1 = malloc(ioVec.getSize());
+        var ioVecData1 = MemoryHelper.malloc(ioVec.getSize());
         MemoryHelper.writeToAddress(ioVec, ioVecData1);
         // Setup second read
         ioVec.base = addr2;
         ioVec.len = size2;
-        var ioVecData2 = malloc(ioVec.getSize());
+        var ioVecData2 = MemoryHelper.malloc(ioVec.getSize());
         MemoryHelper.writeToAddress(ioVec, ioVecData2);
 
         // We are going to send 2 reads to the ring buffer so fill 2 SQ elements with offsets and pointers to io_vec
@@ -320,7 +307,7 @@ public class App {
         // Submit the 2 read requests
         var submitResult = Syscall.io_uring_enter(uringFd, 2, 0, IoUringEnterFlags.ENTER_GETEVENTS, null);
         if (submitResult < 0) {
-            out.printf("Error while submitting ring data: %d, %s\n", submitResult, SyscallError.valueOf(submitResult).getMessage());
+            out.printf("Error while submitting ring data: %s\n", SyscallError.valueOf(submitResult));
             return;
         }
 
@@ -330,19 +317,19 @@ public class App {
             var cqTail = unsafe.getInt(cqTailPtr);
             var cqHead = unsafe.getInt(cqHeadPtr);
             // If we read the amount of calls we inserted we are done
-            if(cqTail - cqHead == 2)
+            if (cqTail - cqHead == 2)
                 break;
             // This will block until min_complete events have been completed
             submitResult = Syscall.io_uring_enter(uringFd, 0, 4, IoUringEnterFlags.ENTER_GETEVENTS, null);
             if (submitResult < 0) {
-                out.printf("Error while submitting ring data: %d, %s\n", submitResult, SyscallError.valueOf(submitResult).getMessage());
+                out.printf("Error while submitting ring data: %s\n", SyscallError.valueOf(submitResult));
                 return;
             }
         }
 
         // Do we have read requests dropped?
         var dropped = unsafe.getInt(sqDroppedPtr);
-        if(dropped > 0) {
+        if (dropped > 0) {
             out.printf("Requests dropped: %d\n", dropped);
             return;
         }
@@ -375,19 +362,19 @@ public class App {
         out.printf("Result:\n==============================\n%s\n==============================\n", new String(data, StandardCharsets.UTF_8));
 
         // Cleanup memory
-        free(sqSharedPtr, sqSharedPtrSize);
-        free(sqeSpace, sqeSpaceSize);
-        free(cqSharedPtr, cqSharedPtrSize);
-        free(ioVecData2, ioVec.getSize());
-        free(ioVecData1, ioVec.getSize());
-        free(addr2, size2);
-        free(addr1, size1);
+        MemoryHelper.free(sqSharedPtr, sqSharedPtrSize);
+        MemoryHelper.free(sqeSpace, sqeSpaceSize);
+        MemoryHelper.free(cqSharedPtr, cqSharedPtrSize);
+        MemoryHelper.free(ioVecData2, ioVec.getSize());
+        MemoryHelper.free(ioVecData1, ioVec.getSize());
+        MemoryHelper.free(addr2, size2);
+        MemoryHelper.free(addr1, size1);
         Syscall.close(fd);
     }
 
     static void readIOUringHelper() throws ExecutionException, InterruptedException {
         // Init the helper
-        try(var uring = new IoUring(10)) {
+        try (var uring = new IoUring(10)) {
             uring.startPolling(false);
             // Or manually poll
             // uring.poll();
@@ -438,10 +425,7 @@ public class App {
     static void multiReadWriteIOUringHelper() throws ExecutionException, InterruptedException {
         // Init the helper
         try (var uring = new IoUring(10)) {
-            uring.startPolling(false);
-            // Or manually poll
-            // uring.poll();
-
+            // Open 3 files
             var readFd1 = (int) Syscall.open(workDir + "/README.md", FileModes.READ);
             var readFd2 = (int) Syscall.open(workDir + "/settings.gradle", FileModes.READ);
             var writeFd = (int) Syscall.open(workDir + "/test", FileFlags.CREATE.getValue(), FileModes.WRITE.getValue(),
@@ -450,19 +434,23 @@ public class App {
                             FilePermissions.WUSR.getValue() |
                             FilePermissions.RUSR.getValue()));
 
-            var readFuture1 = uring.queueRead(readFd1, 20, 0).thenAccept(bytes -> {
-                out.printf("ReadFuture 1: \n%s\n", new String(bytes, StandardCharsets.UTF_8));
-            });
-            var readFuture2 = uring.queueRead(readFd1, 20, 20).thenAccept(bytes -> {
-                out.printf("ReadFuture 2: \n%s\n", new String(bytes, StandardCharsets.UTF_8));
-            });
-            var readFuture3 = uring.queueRead(readFd2, 300, 0).thenAccept(bytes -> {
-                out.printf("ReadFuture 3: \n%s\n", new String(bytes, StandardCharsets.UTF_8));
-            });
-            var writeFuture = uring.queueWrite(writeFd, "Hello World!".getBytes(StandardCharsets.UTF_8), 0).thenAccept(result -> {
-                out.printf("WriteFuture: %d\n", result);
-            });
+            // Schedule multiple reads and writes to the queue
+            var readFuture1 = uring.queueRead(readFd1, 20, 0)
+                    .thenAccept(bytes -> out.printf("ReadFuture 1: \n%s\n", new String(bytes, StandardCharsets.UTF_8)));
+            var readFuture2 = uring.queueRead(readFd1, 20, 20)
+                    .thenAccept(bytes -> out.printf("ReadFuture 2: \n%s\n", new String(bytes, StandardCharsets.UTF_8)));
+            var readFuture3 = uring.queueRead(readFd2, 300, 0)
+                    .thenAccept(bytes -> out.printf("ReadFuture 3: \n%s\n", new String(bytes, StandardCharsets.UTF_8)));
+            var writeFuture = uring.queueWrite(writeFd, "Hello World!".getBytes(StandardCharsets.UTF_8), 0)
+                    .thenAccept(result -> out.printf("WriteFuture: %d\n", result));
+            // Submit the entire queue at once
             uring.submitQueue();
+
+            // Poll until finished
+            var submitted = uring.poll();
+            while (submitted != 4) {
+                submitted += uring.poll();
+            }
 
             // Block
             CompletableFuture.allOf(readFuture1, readFuture2, readFuture3, writeFuture).get();
