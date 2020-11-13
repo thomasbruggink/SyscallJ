@@ -187,7 +187,7 @@ public class IoUring implements AutoCloseable {
         sqe.fd = fd;
         sqe.off = offset;
         sqe.addr = ioVecDataPtr[tail];
-        sqe.len = ioVecDataPtrSize;
+        sqe.len = 1;
         sqe.userData = ioVecDataPtr[tail];
         sq.setSqeAt(index, sqe);
         sq.setTail(tail + 1);
