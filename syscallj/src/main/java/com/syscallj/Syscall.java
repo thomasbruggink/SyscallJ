@@ -164,9 +164,9 @@ public final class Syscall {
      * params:
      * fd: the io uring file descriptor
      * to_submit: how many jobs to submit from the (tail - job count)
-     * min_complete:
-     * flags:
-     * sig:
+     * min_complete: the amount of jobs that need to start before returning
+     * flags: the command to run
+     * sig: additional arguments
      * returns:
      * long: io uring enter result code
      */

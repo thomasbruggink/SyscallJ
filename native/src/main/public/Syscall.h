@@ -98,8 +98,8 @@ namespace syscallj
         static long ioctl(long fd, long cmd, long arg);
         /**
          * Syscall 425, io_uring_setup
-         * entries: 
-         * params: 
+         * entries: the ring size
+         * params: uring struct that will be filled by the kernel
          * returns:
          * long: file descriptor on success, <0 on error
          */
@@ -108,12 +108,12 @@ namespace syscallj
          * Syscall 426, io_uring_enter
          * params:
          * fd: the rings file descriptor
-         * to_submit: 
-         * min_complete: 
-         * flags: 
-         * sig: 
+         * to_submit: how many jobs to submit from the (tail - job count)
+         * min_complete: the amount of jobs that need to start before returning
+         * flags: the command to run
+         * sig: additional arguments
          * returns:
-         * long: 
+         * long: enter result code
          */
         static long io_uring_enter(long fd, unsigned int to_submit, unsigned int min_complete, unsigned int flags, sigset_t *sig);
         /**
@@ -124,7 +124,7 @@ namespace syscallj
          * arg: arguments to pass to the command
          * nr_args: number of arguments
          * returns:
-         * long: ioctl result code
+         * long: register result code
          */
         static long io_uring_register(long fd, unsigned int opcode, void *arg, unsigned int nr_args);
 
